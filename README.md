@@ -1,600 +1,131 @@
-# semarx-idt-framework-RL
-The o# IDT Monitoring System
+# Interaction-loop telemetry for RL agents — code and results
 
-**Information Digital Twin (IDT) for Real-Time RL Agent Robustness Monitoring**
+Code, per-trial scores and result notes for the paper *Am I Still Coupled to My Environment?* (reward-independent
+runtime telemetry for reinforcement-learning agents through the information accounting of the state–action–transition loop).
 
-## Overview
+For a controlled record (S, A, S′) the interaction budget is C = H(S) + H(A) + H(S′) and the coupling share is
+P = I(S,A; S′) / C ≤ ½, with the exact decomposition I(S,A; S′) = I(S; S′) + I(A; S′ | S). The monitor reads P and the
+forward and backward uncertainties H_f = H(S′ | S,A), H_b = H(S,A | S′), ΔH = H_f − H_b in sliding windows, each
+against the agent's own healthy calibration. Reward is not used.
 
-A framework for monitoring reinforcement learning agent robustness using information-theoretic metrics. The system computes Bi-predictability (P) in real-time to detect when an agent's behavior degrades under perturbations, and can automatically trigger corrective interventions.
+## Layout
 
-## Capabilities
+| folder | contents |
+|---|---|
+| `config/` | trial label map (perturbation of every archived trial), frozen protocol configuration, shared discretisation `baseline.json` |
+| `pipeline/` | published windowing and discretisation pipeline (`analyze_trajectory.py`); evaluation, perturbation and training code that produced the archived runs (`app.py`, `idt_monitor.py`) |
+| `halfcheetah/` | analyses of the 21-agent HalfCheetah study (scripts below); `out/` holds per-trial scores, summaries and bootstrap outputs |
+| `halfcheetah/submission/` | scripts behind the numbers of the submitted version, kept for traceability |
+| `gridworld/` | controlled grid world with exact population quantities (`gw_core.py`, `estimators.py`) and the G-series analyses with their outputs |
+| `checkpoints/` | the 21 frozen agents (11 SAC, 10 PPO; Stable-Baselines3 zips) with their observation-normalisation statistics |
+| `long_runs/` | long nominal runs of the frozen agents (1,000 episodes each): numpy policies, runner, replication gates, per-window readings of every run |
+| `results/` | one note per analysis with all numbers (`RESULTS_*.md`) |
 
-### Evaluation
-- Pre-trained SAC/PPO agents (HalfCheetah-v4)
-- Multiple seeds available (3, 5, 7, etc.)
-- Real-time P monitoring with visualization
+## Main results (held out, Chao–Shen estimates)
 
-### Perturbations
-- Observation noise (1-20%)
-- Action noise (1-20%)
-- Configurable start episode
+Nested leave-one-agent-out: for each held-out agent the operating point is chosen on the other 20 agents (maximise inner
+detection subject to inner control false alarms ≤ 0.25); 168 perturbation trials, 21 controls, every method at 6/21 control alarms.
 
-### IDT Intervention (Correction)
-- **Observation smoothing** — EMA filter on observations
-- **Action smoothing** — EMA filter on actions
-- **Action clipping** — Scale action magnitude
-- **Hold probabilities** — Skip % of observations/actions
+| method | detection |
+|---|---|
+| telemetry, three-of-four rule of the paper (threshold held out) | 72.6% |
+| coupling share P alone | 74.4% |
+| telemetry, k selected on the other agents, evaluated on the held-out agent | 76.8% |
+| reward + telemetry (fixed OR) | 77.4% |
+| one-step dynamics model (MLP, healthy data) | 61.3% |
+| MMD (same windows) | 52.4% |
+| reward | 50.6% |
+| H(S), occupancy only | 50.0% |
 
-### Intervention Modes
-| Mode | Description |
-|------|-------------|
-| Off | No intervention, P still computed for monitoring |
-| Static | Intervention starts at fixed episode |
-| Dynamic | Auto-trigger based on P thresholds |
+Agent-level bootstrap with the selection repeated in each resample: P alone − reward [+4.8, +39.3] points;
+three-of-four − reward [+5.4, +34.5]. Details: `results/RESULTS_PRIMARY_heldout.md`, `results/RESULTS_R1_fixed_rule.md`.
 
-### Visualization
-- Episode returns with rolling average
-- P values over time (average + minimum)
-- Intervention status per episode
-- Phase analysis (baseline vs perturbed)
+**Same-stream baselines and sequential detection.** A smoothed histogram KL on the same joint binned alphabet
+ties the three-of-four rule (72.6% held out). With per-episode CUSUM detectors calibrated to the same long-run
+target, telemetry and reward reach similar detection (68.5% and 70.8%) but catch different faults: the telemetry
+caught 18 trials that reward missed, and reward 22 that the telemetry missed; combining them reaches 78.6–80.4% at
+8/21 runs alarming within 100 episodes. See `results/RESULTS_E1_E3_cusum_boundary.md`, `RESULTS_E4_combined.md`,
+`RESULTS_E5_histogram_KL.md`.
 
-### Export
-- Download trajectory logs (CSV)
-- Download test summary log (CSV)
+**Long-run false-alarm target.** Each of the 21 frozen agents was run for 1,000 nominal episodes. With thresholds set
+on the other 20 agents so that at most 25% of nominal runs alarm within 100 episodes after calibration (achieved held out:
+6/21 for each method), detection of the archived faults is 46.4% for the three-of-four telemetry rule, 43.5% for P alone
+and 31.0% for reward (differences to reward [−3.6, +35.1] and [−7.1, +36.3]). False alarms accumulate with exposure for
+all three methods. See `results/RESULTS_H10b_long_nominal.md`.
 
-### Log Files
+**Correction to the submitted Table 3.** The submitted ablation script (`halfcheetah/submission/v31_p04_matched_falsealarm.py`)
+used `numpy.max`, so windows with a zero interaction budget (an agent holding one state for a whole window after a fault)
+made the trial scores of the min-entropy and joint normalisations NaN, and those trials were counted as misses. With one
+consistent convention the plug-in values are 50.6% (min-entropy; submitted 41.1%) and 61.3% (joint; submitted 52.4%).
+With coverage-adjusted estimates the normalisations perform alike (74–76% held out). See `results/RESULTS_R7_ablation.md`.
 
-**Trajectory Log** (per run)
-Contains step-by-step data: episode, step, S, A, S', reward, P, intervention_regime
+## Reproducing
 
-The trajectory log is the core output of the IDT monitoring system. Every computation — normalization, binning, windowing, entropy calculation — exists to transform raw agent behavior into this structured record of state-action-next_state transitions.
-
-**What it captures:**
-- Complete record of agent-environment interaction
-- Every decision the agent made (actions)
-- Every observation the agent received (states)
-- Every outcome that resulted (next states, rewards)
-- Real-time P values measuring behavioral coherence
-- Intervention status at each moment
-
-**Why it matters:**
-- **Reproducibility**: Full trace allows exact replay of what happened
-- **Diagnosis**: Pinpoint exactly when and where behavior degraded
-- **Analysis**: Compute any information-theoretic metric offline
-- **Comparison**: Compare runs across seeds, noise levels, interventions
-- **Validation**: Verify that P correctly detects perturbations
-- **Research**: Source data for publications and deeper analysis
-
-**Columns:**
-| Column | Description |
-|--------|-------------|
-| episode | Episode number (0 to N) |
-| t | Step within episode (0 to 1000) |
-| regime | Perturbation active (0=off, 1=on) |
-| intervention_regime | Intervention active (0=off, 1=on) |
-| P | Bi-predictability at this step (computed every 50 steps) |
-| s_0 to s_16 | 17-dimensional state observation |
-| a_0 to a_5 | 6-dimensional action |
-| reward | Step reward |
-| done | Episode termination flag |
-| s_next_0 to s_next_16 | Next state observation |
-
-**How to use:**
-- Open in Excel/Python for custom analysis
-- Feed into `analyze_trajectory.py` for full entropy breakdown
-- Plot state trajectories to visualize behavior
-- Compare P patterns across different conditions
-- Build flight envelopes from multiple runs
-
-**Test Log** (test_log.csv)
-
-Tracks all experiment runs with settings and summary results:
-
-| Category | Fields |
-|----------|--------|
-| Run info | timestamp, log_file |
-| Model | algorithm, seed, num_episodes |
-| Noise | noise_type, noise_level, perturb_start_episode |
-| Intervention | mode, obs_smoothing, act_smoothing, act_clip |
-| P settings | num_bins, buffer_size, p_threshold_low, p_threshold_high |
-| Results | avg_reward, baseline_avg, perturbed_avg, P_mean, P_min, intervention_pct |
-
-Use this to compare experiments without opening individual trajectory files.
-
-**Test Log** (test_log.csv)
-Tracks all runs with settings and results:
-
-| Category | Fields |
-|----------|--------|
-| Run info | timestamp, log_file |
-| Model | algorithm, seed, num_episodes |
-| Noise | noise_type, noise_level, perturb_start_episode |
-| Intervention | mode, obs_smoothing, act_smoothing, act_clip |
-| P settings | num_bins, buffer_size, p_threshold_low, p_threshold_high |
-| Results | avg_reward, baseline_avg, perturbed_avg, P_mean, P_min, intervention_pct |
-
-### Analysis Notebook
-
-See `Analysis_Notebooks/RL_Analysis_FINAL_gitHub.ipynb` for detailed analysis examples including:
-- Entropy computations
-- P value analysis across conditions
-- Visualization of results
-- Data used in research paper
-
-
-## How to Use
-
-1. **Select Model**: Choose algorithm (SAC/PPO) and seed in sidebar
-2. **Go to Evaluation Tab**
-3. **Enable "Log trajectories"**
-4. **Configure Perturbation**:
-   - Set noise type and level
-   - Set perturbation start episode
-5. **Configure Intervention** (optional):
-   - Select mode (Off/Static/Dynamic)
-   - Adjust smoothing parameters
-   - Set P thresholds for Dynamic mode
-6. **Set P Computation**:
-   - Number of bins (3, 4, or 5)
-   - Buffer size (default 500)
-7. **Run Evaluation**
-8. **Analyze Results**:
-   - View charts
-   - Download logs
-
-## Technical Details
-
-### Bi-predictability (P)
-
-P measures how well the agent's state-action pairs predict next states:
-
-```
-P = MI(S,A ; S') / H_Total
-
-Where:
-- MI(S,A ; S') = H(S,A) + H(S') - H(S,A,S')
-- H_Total = H(S) + H(A) + H(S')
+```bash
+pip install -r requirements.txt
 ```
 
-**Interpretation:**
-- P ≈ 0.33: Healthy baseline behavior
-- P drops: Agent behavior degrading
-- P near 0: Unpredictable/chaotic behavior
+**From the shipped per-trial scores (no raw data needed):**
 
-### Body-Part Grouping (HalfCheetah)
+| result | command (in `halfcheetah/`) | note |
+|---|---|---|
+| primary held-out table, curves, intervals | `python PRIMARY_nested_table.py point` · `curve` · `boot <chunk> <n>` · `bootsum` | RESULTS_PRIMARY_heldout |
+| nested protocol (plug-in, all methods) | `python H5_nested.py point` · `curve` · `boot` · `bootsum` | RESULTS_H5_nested |
+| fixed three-of-four rule | `python R1_fixed_rule.py point` · `boot` · `bootsum` | RESULTS_R1_fixed_rule |
+| MMD settings | `python R4_eval.py point` · `boot` · `bootsum` | RESULTS_R4_MMD_sensitivity |
+| normalisation ablation | `python R7_ablation.py point` · `boot` · `bootsum` | RESULTS_R7_ablation |
+| bins × windows | `python H9_eval.py point` · `boot <k> <W> <n>` · `bootsum` | RESULTS_H9_bins_windows |
+| agent-clustered lead | `python R6_lead_clustered.py` | RESULTS_R6_lead_clustered |
+| ablation curves | `python R7b_curves.py` | RESULTS_R7_ablation |
+| seed-19 runs held out together | `python H6b_grouped.py` | RESULTS_H6_seeds |
+| histogram KL, bootstrap | `python E5_boot.py` | RESULTS_E5_histogram_KL |
+| reset-triplet sensitivity | `tar xzf out/E1_bundle.tgz && python E3_boundary.py` | RESULTS_E1_E3_cusum_boundary |
+| CUSUM (short and long-run) | `tar xzf out/E1_bundle.tgz && tar xzf out/E1_long_bundle.tgz && python E2_cusum_eval.py 1000` | RESULTS_E1_E3_cusum_boundary |
+| combined monitor, overlap | (after the line above) `python E4_combined.py 1000` | RESULTS_E4_combined |
 
-States are grouped by body part for entropy computation:
+The bundles `out/E1_bundle.tgz` (per-episode and boundary-corrected per-window readings of all 189 archived
+trials) and `out/E1_long_bundle.tgz` (per-episode readings of the 21 long runs) are derived data; extract them in
+`halfcheetah/` before running E2–E4.
 
-| Group | State Indices |
-|-------|---------------|
-| Back leg | 2, 3, 4, 11, 12, 13 |
-| Front leg | 5, 6, 7, 14, 15, 16 |
-| Tip | 0, 1, 8, 9, 10 |
+**Scripts that start from the raw step logs** (408 evaluation trajectories, 50,000 steps each; not distributed, see Data):
+`H1H2_coverage_bias.py`, `H1b_coverage.py`, `H2_chaoshen.py` → `H2_eval.py`, `H3_mmd.py`, `H6_extra_seeds.py` → `H6_eval.py`,
+`H8_decomposition.py` → `H8_eval.py`, `H9_bins_windows.py`, `H10a_time_to_alarm.py`, `H13_dynamics.py`, `R4_mmd_sensitivity.py`,
+`Q6_sac_policy_sd.py`, `E1_episode_readings.py`, `E5_kl.py` → `E5_eval.py`. Their outputs (per-trial scores and derived readings)
+are included, so every table can be recomputed without them. Set `IDT_DATA_ROOT` to the folder that contains `RL_sep_analysis/` (raw runs, metrics, checkpoints).
 
-### Binning
+**Grid world** (self-contained; in `gridworld/`):
 
-- **Method**: Equal-width bins on z-scored data
-- **Options**: 3, 4, or 5 bins per dimension
-- **Baseline**: Pre-computed bin edges from clean runs
+| analysis | command | note |
+|---|---|---|
+| G1 truth vs estimate | `python G1_truth_vs_estimate.py` | RESULTS_G1 |
+| G2 occupancy vs mechanism | `python G2_occupancy_vs_mechanism.py` | RESULTS_G2 |
+| G3 accounting vs MMD | `python G3_accounting_vs_mmd.py` | RESULTS_G3 |
+| replication over seeds | `python R2_replicate.py g1` · `g2` · `g3a` · `g3b` · `g3sum` | RESULTS_R2_gridworld_replication |
+| G4a normalisation stability | `python G4a_normalisation_stability.py` | RESULTS_G4a_normalisation_stability |
+| G4b entry point × mechanism | `python G4b_entry_mechanism.py 7` · `27`, then `python G4b_eval.py` | RESULTS_G4b_entry_mechanism |
+| G4c gradual faults | `python G4c_gradual.py 7` · `27`, then `python G4c_eval.py` | RESULTS_G4c_gradual |
+| G4d benign variation | `python G4d_benign_variation.py 7` · `27`, then `python G4d_eval.py` | RESULTS_G4d_benign_variation |
 
-### Dynamic Intervention
+**Long nominal runs** (in `long_runs/`; the runner needs the checkpoints, and gate 1/2 the archived control logs):
+`python gate1_actions.py` (checkpoints reproduce logged actions), `python runner.py gate 1 50000 <agents>` then
+`python gate2_compare.py`, `./batch.sh <n> <agents> -- <agents>` (1,000,000 steps per agent), `python post_batch.py <agents>` (per-window readings into
+`long_runs/readings/`, included for all 21 runs), `python E1_long.py <agents>` (per-episode readings), `python h10b_eval.py 1000` (held-out thresholds at the long-run target, applied to the archived
+trials; outputs in `long_runs/out/`). Note: `results/RESULTS_H10b_long_nominal.md`.
 
-Uses hysteresis thresholds:
-- P < threshold_low → Intervention ON
-- P > threshold_high → Intervention OFF
-- Between thresholds → No change
+## Data
 
-This prevents rapid on/off oscillation.
+Included: the 21 frozen checkpoints (`checkpoints/`), the trial label map and discretisation (`config/`), per-trial
+scores for every analysis (`halfcheetah/out/`, shipped as `halfcheetah/out.tgz`; unpack with `tar -xzf halfcheetah/out.tgz` from the repository root), per-episode readings of the archived trials and the long runs
+(`halfcheetah/out/*bundle.tgz`), per-window readings of all long runs (`long_runs/readings/`), and the grid-world
+outputs. The raw step logs of the archived evaluations are not distributed; every reported table can be recomputed
+from the included data, and the long runs can be regenerated from the checkpoints. Point `IDT_DATA_ROOT` at a folder
+containing `RL_sep_analysis/` to run the scripts that need raw files.
 
-## Files
+## Environment
 
-| File | Purpose |
-|------|---------|
-| ui.py | Streamlit interface |
-| app.py | Training/evaluation functions |
-| idt_monitor.py | Real-time P computation |
-| idt_intervention.py | Correction wrappers |
-| analyze_trajectory.py | Offline analysis |
-
-## Citation
-
-If you use this work, please cite:
-
-```
-@software{idt_monitoring,
-  title={IDT Monitoring System},
-  author={Semarx Research},
-  year={2025},
-  url={https://github.com/Semarxai/idt_app}
-}
-```
+HalfCheetah-v4 (gymnasium); the long runs used gymnasium 1.4.0 and MuJoCo 3.4.0, with policies evaluated in numpy from
+the saved weights (no torch needed). Python ≥ 3.10.
 
 ## License
 
-Proprietary - All rights reserved.
-
----
-
-**Semarx Research** | [semarx.com](https://www.semarx.com) official framework for the Semarx Information Digital Twin (IDT). A model-agnostic governance layer that stops agentic drift by measuring the "Bi-Predictability" of every action.
-
-
-
-
-
-
-IDT-LLM: Information-Theoretic Metrics for LLM Conversation Coherence
-Overview
-This repository contains the code and experimental framework for evaluating Bi-predictability (P) as a content-agnostic metric for monitoring agent-environment coupling in Large Language Model (LLM) conversations.
-
-P is an information-theoretic measure that captures mutual predictability between conversation states without requiring semantic analysis, embeddings, or external evaluation models.
-
-Theoretical Background
-Bi-predictability (P)
-P measures how well the current state-action pair predicts the next state:
-
-P = MI(S,A; S') / (H(S) + H(A) + H(S'))
-Where:
-
-S = Current state (conversation context/prompt)
-A = Action (model response)
-S' = Next state (subsequent turn)
-MI = Mutual Information
-H = Shannon Entropy
-Related Metrics
-Metric	Formula	Interpretation
-Hf (Forward Entropy)	H(S'|S,A)	Uncertainty about next state given current state-action
-Hb (Backward Entropy)	H(S,A|S')	Uncertainty about what led to current state
-Delta H	Hf - Hb	Temporal asymmetry (negative = agentic behavior)
-Key Properties
-P < 0.5: Indicates agentic system (not purely reactive or random)
-P stable: Healthy coupling maintained
-P drops: Coupling disruption detected
-Delta H < 0: Forward prediction easier than backward inference (arrow of time)
-We map dialogue into a (S, A, S') loop:
-
-S: Accumulated context (all prior turns)
-A: Student response (current turn)
-S': Teacher's subsequent prompt
-Metrics Computed
-Metric	Formula	Interpretation
-H(S)	Shannon entropy of S	Context diversity
-H(A)	Shannon entropy of A	Response diversity
-H(S')	Shannon entropy of S'	Prompt diversity
-MI(S;A)	H(S) + H(A) - H(S,A)	Context-response coupling
-P	MI(S,A;S') / [H(S) + H(A) + H(S')]	Bi-predictability
-Hf	H(S,A,S') - H(S,A)	Forward uncertainty
-Hb	H(S,A,S') - H(S')	Backward uncertainty
-Delta	Hf - Hb	Information asymmetry
-Repository Structure
-idt/
-├── config.py                  # Configuration parameters
-├── idt_headless.py            # Main experiment runner (baseline tests)
-├── test_injection_full.py     # Perturbation experiment runner
-├── logs_gemini/               # Gemini teacher experiment outputs
-├── logs_claude/               # Claude teacher experiment outputs
-├── logs_chatgpt/              # ChatGPT teacher experiment outputs
-Files Description
-Llama_Master_metrics_Sample.csv
-A sample data set. The repository includes a sample of the analyzed conversation data (data/sample_metrics.csv). Full dataset available upon request.
-
-Data Description
-Column Definitions
-Identifiers
-Column	Type	Description
-UID	string	Unique identifier for each conversation turn
-teacher	string	Teacher model: claude, chatgpt, or gemini
-condition	string	Generation setting: normal (temp=0.7) or constrained (temp=0.1)
-test	integer	Test number (1-10) indicating experimental design
-Turn	integer	Turn number within conversation (1 to max 200)
-Core Information-Theoretic Metrics
-Column	Type	Formula	Description
-H_S	float	H(S)	Shannon entropy of current state (context/prompt tokens)
-H_A	float	H(A)	Shannon entropy of action (response tokens)
-H_S_prime	float	H(S')	Shannon entropy of next state tokens
-H_SA	float	H(S,A)	Joint entropy of state and action
-H_SAS_prime	float	H(S,A,S')	Joint entropy of state, action, and next state
-MI_SA_Sprime	float	MI(S,A; S')	Mutual information between state-action pair and next state
-MI_S_A	float	MI(S; A)	Mutual information between state and action
-P	float	MI(S,A;S') / (H(S)+H(A)+H(S'))	Bi-predictability — primary metric (range: 0-1)
-Hf	float	H(S'|S,A)	Forward entropy — uncertainty about next state given current state-action
-Hb	float	H(S,A|S')	Backward entropy — uncertainty about state-action given next state
-Delta	float	Hf - Hb	Temporal asymmetry — negative values indicate agentic behavior
-Token Statistics
-Column	Type	Description
-Tokens_S	integer	Number of tokens in state (context/prompt)
-Tokens_A	integer	Number of tokens in action (response)
-Tokens_S_prime	integer	Number of tokens in next state
-Unique_S	integer	Number of unique tokens in state
-Unique_A	integer	Number of unique tokens in action
-Unique_S_prime	integer	Number of unique tokens in next state
-Conversation Content
-Column	Type	Description
-Prompt	string	Teacher model's prompt/question for this turn
-Response	string	Student model's (Llama) response
-Perturbation Indicator
-Column	Type	Description
-injection	integer	1 = perturbation injected at this turn, 0 = normal turn
-Baseline Metrics (External Evaluation)
-Column	Type	Description
-cosine_sim	float	Cosine similarity between prompt and response embeddings (Sentence-BERT)
-adjacent_coherence	float	Cosine similarity between current response and previous response
-cumulative_drift	float	Cosine similarity between current response and first response
-score_openai	float	LLM-as-Judge quality score (1-7 scale, GPT-4)
-explanation_openai	string	GPT-4's explanation for the assigned score
-Metric Interpretation Guide
-P (Bi-predictability)
-Value	Interpretation
-~0.27	Normal baseline for LLM conversations
-< 0.22	Potential coupling disruption
-> 0.35	Unusually tight coupling
-Delta H (Temporal Asymmetry)
-Value	Interpretation
-< 0	Agentic behavior (forward prediction easier than backward)
-≈ 0	Symmetric/reactive system
-> 0	Unusual (backward inference easier)
-Cosine Similarity
-Value	Interpretation
-> 0.7	High semantic relevance
-0.4 - 0.7	Moderate relevance
-< 0.4	Low relevance / off-topic
-Judge Score (score_openai)
-Value	Interpretation
-6-7	Excellent response
-4-5	Good response
-2-3	Poor response
-1	Very poor / incoherent
-Data Statistics
-Statistic	Value
-Total turns	4,574
-Teachers	3 (Claude, ChatGPT, Gemini)
-Tests	9 (Tests 1-4, 6-10)
-Conditions	2 (normal, constrained)
-Unique combinations	34
-Perturbation turns	135 (5 injections × 3 tests × 3 teachers × 3 types)
-config.py
-Central configuration file containing:
-
-Student model parameters: temperature, top_p, top_k, context_limit, max_response, repeat_penalty
-API keys: Claude, OpenAI, Gemini
-Teacher selection: TEACHER_PROVIDER setting
-Experiment settings: MAX_TURNS, TEACHER_PROMPT
-Two conditions defined:
-
-Normal: temperature=0.7, top_p=0.9, top_k=40, max_response=150
-Constrained: temperature=0.1, top_p=0.5, top_k=10, max_response=50
-idt_headless.py
-Main experiment runner for baseline conversation tests.
-
-Features:
-
-EntropyEngine class using NousResearch/Llama-2-7b-hf tokenizer
-Shannon entropy computation for token distributions
-Teacher model API calls (Claude, ChatGPT, Gemini)
-Student model calls via Ollama API
-Outputs two CSV files per run:
-*_metrics.csv: All computed metrics per turn
-*_conversation.csv: Full prompts and responses
-test_injection_full.py
-Perturbation experiment runner with scheduled interventions.
-
-Injection Protocol:
-
-Turns 1-30: Baseline (normal conversation)
-Turns 31, 46, 61, 76, 91: Injection turns
-Turns 32-105: Recovery periods between injections
-Injection Types:
-
-Contradictions: "That doesn't sound right..."
-Topic shifts: "Let's switch to discussing..."
-Non-sequiturs: "I had a sandwich yesterday..."
-Experimental Design
-Test Protocols
-Test	Type	Turns	Description
-3	Baseline	200	Varied questioning styles
-4	Baseline	200	Deep topic exploration
-8	Baseline	150	Natural dialogue progression
-7	Perturbation	105	Contradiction injections
-9	Perturbation	105	Topic shift injections
-10	Perturbation	105	Non-sequitur injections
-Conditions
-Condition	Temperature	Top_k	Max Response	Purpose
-Normal	0.7	40	150	Unrestricted generation
-Constrained	0.1	10	50	Simulated capacity degradation
-Teachers
-Provider	Model
-Gemini	gemini-2.0-flash
-Claude	claude-sonnet-4-20250514
-ChatGPT	gpt-4o-mini
-Output Files
-Metrics CSV Columns
-teacher, condition, test, DateTime, Turn,
-H_S, H_A, H_S_prime, H_SA, H_SAS_prime,
-MI_SA_Sprime, MI_S_A, P, Hf, Hb, Delta,
-Tokens_S, Tokens_A, Tokens_S_prime,
-Unique_S, Unique_A, Unique_S_prime, injection
-Conversation CSV Columns
-teacher, condition, test, DateTime, Turn,
-Prompt, Response, injection
-Infrastructure
-Component	Specification
-VM	Azure Standard_NC4as_T4_v3
-GPU	NVIDIA T4 (16GB VRAM)
-RAM	28GB
-OS	Ubuntu 24.04
-Student Model	Ollama + Llama 3.1 8B
-Tokenizer	NousResearch/Llama-2-7b-hf
-Usage
-Prerequisites
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Pull Llama model
-ollama pull llama3.1:8b
-
-# Install Python dependencies
-pip install anthropic openai google-generativeai transformers requests
-Running Experiments
-Configure settings in config.py:
-
-Set API keys
-Choose TEACHER_PROVIDER (gemini/claude/chatgpt)
-Set condition parameters (normal/constrained)
-Set MAX_TURNS
-Start Ollama:
-
-   ollama serve &
-Run baseline experiment:
-   python3 idt_headless.py
-Run perturbation experiment:
-   python3 test_injection_full.py
-Validation Metrics
-Post-hoc validation using:
-
-Semantic similarity: SentenceTransformer (all-MiniLM-L6-v2)
-Judge scoring: MT-Bench style evaluation (GPT-4o-mini)
-Metric	Method
-cosine_sim	Prompt-response semantic similarity
-adjacent_coherence	Consecutive response similarity
-cumulative_drift	Drift from conversation start
-score_openai	MT-Bench judge score (1-10)
-Experimental Setup
-Models
-Role	Model	Purpose
-Student	Llama 3.1 8B (via Ollama)	Generates responses, accumulates context
-Teachers	Claude Sonnet 4, GPT-4o-mini, Gemini Pro Preview	Provide prompts/questions
-Student Model Configuration
-temperature = 0.7
-top_p = 0.9
-top_k = 40
-max_tokens = 150
-context_limit = 4096
-repeat_penalty = 1.1
-Experimental Tests
-Baseline Coherence Tests
-Test	Turns	Description
-Test 3	200	Semi-random variation, mild contradictions
-Test 4	200	Single topic deepening, reference past turns
-Test 8	150	Hybrid natural coherence
-Perturbation Tests
-Test	Type	Injection Turns	Description
-Test 7	Contradiction	31, 46, 61, 76, 91	"That doesn't sound right..."
-Test 9	Topic Shift	31, 46, 61, 76, 91	"Let's switch to discussing..."
-Test 10	Non-Sequitur	31, 46, 61, 76, 91	Unrelated statements (~40 words each)
-Baseline Metrics (for comparison)
-Metric	Method	Reference
-Cosine Similarity	Sentence-BERT (all-MiniLM-L6-v2)	Reimers & Gurevych (2019)
-LLM-as-Judge	GPT-4 scoring (1-7 scale)	Zheng et al. (2023)
-Repository Structure
-IDT-LLM/
-├── README.md                 # This file
-├── config.py                 # API keys and model configuration
-├── idt_headless.py           # Main conversation pipeline
-├── test_injection_full.py    # Perturbation injection experiments
-├── cosine_analysis.py        # Semantic similarity computation
-├── judge_validation.py       # LLM-as-Judge evaluation
-└── analysis.ipynb            # Statistical analysis notebook
-File Descriptions
-File	Purpose
-config.py	Configuration template (API keys, model settings, test parameters)
-idt_headless.py	Core pipeline: runs student-teacher conversations, computes P, Hf, Hb, Delta
-test_injection_full.py	Runs perturbation tests with injections at specified turns
-cosine_analysis.py	Computes cosine similarity between prompt-response pairs
-judge_validation.py	Sends responses to GPT-4 for quality scoring
-analysis.ipynb	Jupyter notebook with all statistical analyses and visualizations
-Installation
-Requirements
-pip install anthropic openai google-generativeai transformers torch
-pip install sentence-transformers scipy pandas numpy matplotlib
-Local Model Setup (Ollama)
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Download Llama model
-ollama pull llama3.1:8b
-
-# Start Ollama server
-ollama serve
-Configuration
-Copy config.py template
-Add your API keys:
-CLAUDE_API_KEY
-OPENAI_API_KEY
-GEMINI_API_KEY
-Usage
-Run Baseline Conversation
-python idt_headless.py --test 3 --teacher claude --turns 200
-Run Perturbation Test
-python test_injection_full.py --test 7 --teacher claude --turns 100
-Compute Baseline Metrics
-python cosine_analysis.py --input results/test3_claude.csv
-python judge_validation.py --input results/test3_claude.csv
-Run Analysis
-Open analysis.ipynb in Jupyter and run all cells.
-
-Results Summary
-Dataset
-Total turns: 4,574
-Test combinations: 34 (test × teacher × condition)
-Teachers: Claude, ChatGPT, Gemini
-P Stability
-Dimension	Mean P	Std
-Overall	0.276	0.028
-By Teacher	0.259 - 0.294	-
-By Condition	0.275 - 0.277	-
-P remains stable at ~0.27 across all conditions, confirming reliable baseline.
-
-Correlation Analysis
-Metric Pair	Significant (p<0.05)	Positive Direction
-P vs Cosine	85% (29/34)	94% (32/34)
-P vs Judge	44% (15/34)	59% (20/34)
-Delta vs Cosine	76% (26/34)	-
-Conclusion: P correlates with structural coherence (cosine) but not semantic quality (judge).
-
-Perturbation Detection
-Teacher	P	Delta H	Cosine	Judge
-ChatGPT	9/9 (p<0.001)	9/9 (p<0.001)	9/9 (p<0.001)	9/9 (p<0.001)
-Claude	9/9 (p<0.001)	9/9 (p<0.001)	9/9 (p<0.001)	9/9 (p<0.001)
-Gemini	9/9 (p<0.001)	9/9 (p<0.001)	9/9 (p<0.001)	9/9 (p<0.001)
-Conclusion: P detects all perturbations with statistical significance, matching semantic methods without requiring embeddings or external models.
-
-Effect Sizes
-All effect sizes were large (Cohen's d > 0.8):
-
-P: d = 1.26 - 6.99
-Delta H: d = 1.70 - 8.82
-Cosine: d = 3.95 - 9.25
-Judge: d = 2.22 - 4.55
-Recovery Dynamics
-P recovers to baseline within 1-2 turns after perturbation, demonstrating the system's capacity to restore coupling.
-
-Key Findings
-P is content-agnostic: Detects perturbations using only token frequency distributions
-P correlates with structure, not quality: High correlation with cosine similarity, low with judge scores
-P is stable: Mean ~0.27 across all conditions, low variance (SD = 0.028)
-P detects all perturbation types: Contradiction, topic shift, non-sequitur (9/9 combinations)
-P enables rapid detection: Responds immediately to disruption, recovers within 1-2 turns
-Theoretical Implications
-P provides a first-person observable metric for agent-environment coupling. Unlike semantic evaluation methods that require external models, P can be computed from within the interaction itself.
-
-This has implications for:
-
-Real-time monitoring: Detect coupling degradation without API calls
-Self-correcting agents: Systems that adjust behavior when P drops
-Lightweight deployment: No embedding models required
-Citation
-@article{author2025predictive,
-  title={Bi-predictability: An Information-Theoretic Metric for Agent-Environment Coupling},
-  author={[Author Names]},
-  journal={[Journal]},
-  year={2025}
-}
-References
-Reimers, N., & Gurevych, I. (2019). Sentence-BERT: Sentence embeddings using Siamese BERT-networks. EMNLP-IJCNLP. https://arxiv.org/abs/1908.10084
-
-Zheng, L., et al. (2023). Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena. NeurIPS. https://arxiv.org/abs/2306.05685
-
-License
-MIT License
-
-Contact
-idt@semarx.com
+MIT (see `LICENSE`).
