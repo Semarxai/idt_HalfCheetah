@@ -1,0 +1,61 @@
+world,method,cond,matched,pm3,z
+7x7 W500,P alone (CS),control,24%,57%,3.66
+7x7 W500,P alone (CS),benign: start top row of left room,52%,95%,3.66
+7x7 W500,P alone (CS),benign: start anywhere in left room,81%,100%,3.66
+7x7 W500,P alone (CS),benign: 50/50 left column + top row,24%,67%,3.66
+7x7 W500,P alone (CS),benign: start bottom row of left room,62%,95%,3.66
+7x7 W500,P alone (CS),fault: 10% executed-action noise,100%,100%,3.66
+7x7 W500,three-of-four (CS),control,24%,62%,3.5
+7x7 W500,three-of-four (CS),benign: start top row of left room,62%,95%,3.5
+7x7 W500,three-of-four (CS),benign: start anywhere in left room,43%,90%,3.5
+7x7 W500,three-of-four (CS),benign: 50/50 left column + top row,10%,71%,3.5
+7x7 W500,three-of-four (CS),benign: start bottom row of left room,19%,71%,3.5
+7x7 W500,three-of-four (CS),fault: 10% executed-action noise,100%,100%,3.5
+7x7 W500,H(S),control,24%,81%,3.67
+7x7 W500,H(S),benign: start top row of left room,100%,100%,3.67
+7x7 W500,H(S),benign: start anywhere in left room,67%,100%,3.67
+7x7 W500,H(S),benign: 50/50 left column + top row,71%,95%,3.67
+7x7 W500,H(S),benign: start bottom row of left room,29%,67%,3.67
+7x7 W500,H(S),fault: 10% executed-action noise,95%,100%,3.67
+7x7 W500,MMD (delta),control,24%,95%,6.37
+7x7 W500,MMD (delta),benign: start top row of left room,100%,100%,6.37
+7x7 W500,MMD (delta),benign: start anywhere in left room,100%,100%,6.37
+7x7 W500,MMD (delta),benign: 50/50 left column + top row,100%,100%,6.37
+7x7 W500,MMD (delta),benign: start bottom row of left room,100%,100%,6.37
+7x7 W500,MMD (delta),fault: 10% executed-action noise,76%,100%,6.37
+7x7 W500,reward,control,24%,71%,3.55
+7x7 W500,reward,benign: start top row of left room,48%,76%,3.55
+7x7 W500,reward,benign: start anywhere in left room,100%,100%,3.55
+7x7 W500,reward,benign: 50/50 left column + top row,38%,71%,3.55
+7x7 W500,reward,benign: start bottom row of left room,48%,76%,3.55
+7x7 W500,reward,fault: 10% executed-action noise,100%,100%,3.55
+27x27 W200,P alone (CS),control,24%,86%,3.87
+27x27 W200,P alone (CS),benign: start top row of left room,52%,95%,3.87
+27x27 W200,P alone (CS),benign: start anywhere in left room,52%,95%,3.87
+27x27 W200,P alone (CS),benign: 50/50 left column + top row,29%,86%,3.87
+27x27 W200,P alone (CS),benign: start bottom row of left room,67%,95%,3.87
+27x27 W200,P alone (CS),fault: 10% executed-action noise,100%,100%,3.87
+27x27 W200,three-of-four (CS),control,24%,81%,3.65
+27x27 W200,three-of-four (CS),benign: start top row of left room,14%,67%,3.65
+27x27 W200,three-of-four (CS),benign: start anywhere in left room,29%,81%,3.65
+27x27 W200,three-of-four (CS),benign: 50/50 left column + top row,29%,90%,3.65
+27x27 W200,three-of-four (CS),benign: start bottom row of left room,33%,81%,3.65
+27x27 W200,three-of-four (CS),fault: 10% executed-action noise,100%,100%,3.65
+27x27 W200,H(S),control,24%,71%,3.98
+27x27 W200,H(S),benign: start top row of left room,86%,100%,3.98
+27x27 W200,H(S),benign: start anywhere in left room,95%,100%,3.98
+27x27 W200,H(S),benign: 50/50 left column + top row,76%,95%,3.98
+27x27 W200,H(S),benign: start bottom row of left room,10%,81%,3.98
+27x27 W200,H(S),fault: 10% executed-action noise,48%,95%,3.98
+27x27 W200,MMD (delta),control,24%,95%,5.45
+27x27 W200,MMD (delta),benign: start top row of left room,90%,100%,5.45
+27x27 W200,MMD (delta),benign: start anywhere in left room,19%,90%,5.45
+27x27 W200,MMD (delta),benign: 50/50 left column + top row,57%,100%,5.45
+27x27 W200,MMD (delta),benign: start bottom row of left room,43%,100%,5.45
+27x27 W200,MMD (delta),fault: 10% executed-action noise,38%,100%,5.45
+27x27 W200,reward,control,24%,14%,2.67
+27x27 W200,reward,benign: start top row of left room,43%,24%,2.67
+27x27 W200,reward,benign: start anywhere in left room,100%,100%,2.67
+27x27 W200,reward,benign: 50/50 left column + top row,38%,19%,2.67
+27x27 W200,reward,benign: start bottom row of left room,33%,14%,2.67
+27x27 W200,reward,fault: 10% executed-action noise,10%,0%,2.67

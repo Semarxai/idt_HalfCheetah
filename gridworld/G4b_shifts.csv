@@ -1,0 +1,11 @@
+cond,P,Hf,Hb,dH,termS,termA,HS,MMD,reward,world
+control,-0.04,0.03,0.01,0.01,-0.04,0.01,-0.02,-0.09,-0.01,7x7 W500
+agent-side stochastic: 10% action noise,-5.81,6.31,3.81,0.21,-2.08,-2.34,1.19,2.03,-2.57,7x7 W500
+agent-side systematic: sensor offset (left room),-4.77,2.97,1.97,0.02,-3.93,0.16,-4.32,25.96,-0.01,7x7 W500
+env-side stochastic: slip 0.05 -> 0.15,-6.53,7.22,4.51,0.33,-2.53,-2.6,1.72,4.41,-3.17,7x7 W500
+"env-side systematic: wind south (right room, p 0.2)",-4.07,4.41,3.08,-0.11,-3.32,-0.03,1.11,11.35,2.79,7x7 W500
+control,-0.03,0.02,0.01,-0.01,-0.02,0.01,-0.03,0.0,-0.01,27x27 W200
+agent-side stochastic: 10% action noise,-3.12,3.46,1.56,0.17,-0.81,-1.02,-0.14,0.48,-0.53,27x27 W200
+agent-side systematic: sensor offset (left room),-0.74,0.61,0.22,0.08,-0.25,-0.16,-0.47,0.42,0.05,27x27 W200
+env-side stochastic: slip 0.05 -> 0.15,-3.91,4.38,2.09,0.1,-1.08,-1.24,-0.03,0.6,-0.63,27x27 W200
+"env-side systematic: wind south (right room, p 0.2)",-2.24,3.06,1.6,-0.14,-0.92,-0.3,0.9,2.07,0.9,27x27 W200

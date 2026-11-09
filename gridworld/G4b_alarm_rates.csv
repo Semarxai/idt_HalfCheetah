@@ -1,0 +1,11 @@
+cond,three-of-four (CS),P alone (CS),H(S),MMD,reward,world
+control,24%,24%,24%,24%,24%,7x7 W500
+agent-side stochastic: 10% action noise,100%,100%,90%,95%,100%,7x7 W500
+agent-side systematic: sensor offset (left room),100%,100%,100%,100%,14%,7x7 W500
+env-side stochastic: slip 0.05 -> 0.15,100%,100%,100%,100%,100%,7x7 W500
+"env-side systematic: wind south (right room, p 0.2)",100%,100%,90%,100%,100%,7x7 W500
+control,24%,24%,24%,24%,24%,27x27 W200
+agent-side stochastic: 10% action noise,100%,100%,38%,71%,10%,27x27 W200
+agent-side systematic: sensor offset (left room),67%,62%,76%,71%,33%,27x27 W200
+env-side stochastic: slip 0.05 -> 0.15,100%,100%,52%,86%,10%,27x27 W200
+"env-side systematic: wind south (right room, p 0.2)",100%,100%,24%,100%,100%,27x27 W200
