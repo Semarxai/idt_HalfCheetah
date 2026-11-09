@@ -1,0 +1,39 @@
+agents: 21
+       method  z_median   z_range heldout_alarm_within_100ep  heldout_median_time  heldout_mean_time censored  archived_detection archived_control_alarms
+three-of-four       4.8 4.40-4.80                       6/21               394.90             494.90     7/21               46.43                    0/21
+      P alone       5.3 4.15-5.30                       6/21               641.00             551.78     9/21               43.45                    0/21
+       reward       6.1 3.95-6.10                       6/21               318.15             501.38     8/21               30.95                    2/21
+method           P alone  reward  three-of-four
+cond                                           
+act_noise_01%       28.6    23.8            9.5
+act_noise_03%       47.6    19.0           57.1
+act_noise_04%       52.4    33.3           81.0
+force_torso_10N     23.8    23.8           14.3
+force_torso_5N      23.8    14.3           14.3
+gravity_110%        33.3    33.3           33.3
+obs_noise_01%       52.4    33.3           71.4
+obs_noise_03%       85.7    66.7           90.5
+          three-of-four  P alone  reward
+episodes                                
+1                   0.0      0.0     4.8
+5                   0.0      4.8     4.8
+10                  0.0      9.5     4.8
+25                  4.8     14.3     4.8
+50                 23.8     28.6    28.6
+75                 23.8     28.6    28.6
+100                28.6     28.6    28.6
+150                33.3     33.3    42.9
+200                38.1     38.1    47.6
+300                42.9     38.1    47.6
+400                52.4     47.6    52.4
+500                52.4     47.6    52.4
+600                57.1     47.6    52.4
+700                61.9     52.4    57.1
+800                66.7     52.4    57.1
+900                66.7     52.4    57.1
+985                66.7     57.1    61.9
+three-of-four  detection [14.3, 61.9]
+P alone        detection [14.9, 68.5]
+reward         detection [4.8, 45.8]
+three-of-four - reward [-3.6, +35.1]
+P alone - reward [-7.1, +36.3]

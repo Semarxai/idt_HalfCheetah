@@ -1,0 +1,64 @@
+agent,method,z,time_to_first_FA,censored
+ppo02,three-of-four,4.4,43.4,False
+ppo04,three-of-four,4.4,31.55,False
+ppo08,three-of-four,4.8,562.05,False
+ppo11,three-of-four,4.4,85.4,False
+ppo13,three-of-four,4.4,30.8,False
+ppo17,three-of-four,4.8,781.15,False
+ppo27,three-of-four,4.8,985.0,True
+ppo30,three-of-four,4.8,318.5,False
+ppo33,three-of-four,4.4,27.8,False
+ppo36,three-of-four,4.8,985.0,True
+sac01,three-of-four,4.8,279.1,False
+sac03,three-of-four,4.8,985.0,True
+sac05,three-of-four,4.8,985.0,True
+sac07,three-of-four,4.8,985.0,True
+sac09,three-of-four,4.8,110.6,False
+sac10,three-of-four,4.8,640.7,False
+sac11,three-of-four,4.8,394.9,False
+sac13,three-of-four,4.8,985.0,True
+sac14,three-of-four,4.8,173.85,False
+sac18,three-of-four,4.8,985.0,True
+sac19,three-of-four,4.4,18.0,False
+ppo02,P alone,4.15,7.8,False
+ppo04,P alone,4.15,31.5,False
+ppo08,P alone,4.15,4.0,False
+ppo11,P alone,4.15,26.45,False
+ppo13,P alone,4.15,15.1,False
+ppo17,P alone,5.3,985.0,True
+ppo27,P alone,5.3,985.0,True
+ppo30,P alone,5.3,318.5,False
+ppo33,P alone,4.15,27.8,False
+ppo36,P alone,5.3,985.0,True
+sac01,P alone,5.3,970.7,False
+sac03,P alone,5.3,985.0,True
+sac05,P alone,5.3,985.0,True
+sac07,P alone,5.3,985.0,True
+sac09,P alone,5.3,110.6,False
+sac10,P alone,5.3,641.0,False
+sac11,P alone,5.3,395.05,False
+sac13,P alone,5.3,985.0,True
+sac14,P alone,5.3,173.95,False
+sac18,P alone,5.3,985.0,True
+sac19,P alone,5.3,985.0,True
+ppo02,reward,3.95,43.4,False
+ppo04,reward,6.1,106.5,False
+ppo08,reward,3.95,1.0,False
+ppo11,reward,6.1,141.25,False
+ppo13,reward,3.95,30.75,False
+ppo17,reward,3.95,45.15,False
+ppo27,reward,6.1,985.0,True
+ppo30,reward,6.1,318.15,False
+ppo33,reward,3.95,27.75,False
+ppo36,reward,6.1,985.0,True
+sac01,reward,6.1,970.5,False
+sac03,reward,6.1,985.0,True
+sac05,reward,6.1,985.0,True
+sac07,reward,6.1,985.0,True
+sac09,reward,6.1,110.3,False
+sac10,reward,6.1,640.45,False
+sac11,reward,6.1,985.0,True
+sac13,reward,6.1,985.0,True
+sac14,reward,6.1,173.8,False
+sac18,reward,3.95,40.05,False
+sac19,reward,6.1,985.0,True
