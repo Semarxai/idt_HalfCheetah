@@ -17,7 +17,7 @@ against the agent's own healthy calibration. Reward is not used.
 | `halfcheetah/` | analyses of the 21-agent HalfCheetah study (scripts below); `out/` holds per-trial scores, summaries and bootstrap outputs |
 | `halfcheetah/submission/` | scripts behind the numbers of the submitted version, kept for traceability |
 | `gridworld/` | controlled grid world with exact population quantities (`gw_core.py`, `estimators.py`) and the G-series analyses with their outputs |
-| `checkpoints/` | the 21 frozen agents (11 SAC, 10 PPO; Stable-Baselines3 zips) with their observation-normalisation statistics |
+| `checkpoints_sac/sac/`, `checkpoints_ppo/ppo/` | the 21 frozen agents (11 SAC, 10 PPO; Stable-Baselines3 zips) with their observation-normalisation statistics |
 | `long_runs/` | long nominal runs of the frozen agents (1,000 episodes each): numpy policies, runner, replication gates, per-window readings of every run |
 | `results/` | one note per analysis with all numbers (`RESULTS_*.md`) |
 
@@ -114,7 +114,7 @@ trials; outputs in `long_runs/out/`). Note: `results/RESULTS_H10b_long_nominal.m
 
 ## Data
 
-Included: the 21 frozen checkpoints (`checkpoints/`), the trial label map and discretisation (`config/`), per-trial
+Included: the 21 frozen checkpoints (`checkpoints_sac/sac/`, `checkpoints_ppo/ppo/`), the trial label map and discretisation (`config/`), per-trial
 scores for every analysis (`halfcheetah/out/`, shipped as `halfcheetah/out.tgz`; unpack with `tar -xzf halfcheetah/out.tgz` from the repository root), per-episode readings of the archived trials and the long runs
 (`halfcheetah/out/*bundle.tgz`), per-window readings of all long runs (`long_runs/readings/`), and the grid-world
 outputs. The raw step logs of the archived evaluations are not distributed; every reported table can be recomputed
