@@ -26,7 +26,9 @@ def load_pth(zbytes):
 AGENTS={**{f"sac{s:02d}":("sac",s) for s in [1,3,5,7,9,10,11,13,14,18,19]},
         **{f"ppo{s:02d}":("ppo",s) for s in [2,4,8,11,13,17,27,30,33]},"ppo36":("ppo",19)}
 def paths(algo,s):
-    d=f"{U}/{algo}"          # repository layout: checkpoints/sac, checkpoints/ppo
+    d=f"{U}/{algo}"          # layout checkpoints/sac, checkpoints/ppo
+    if not os.path.isdir(d):  # repository layout: checkpoints_sac/sac, checkpoints_ppo/ppo
+        d=os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",f"checkpoints_{algo}",algo)
     return f"{d}/{algo}_claude_seed{s}.zip", f"{d}/vec_normalize_{algo}_claude_seed{s}.pkl"
 class _D:
     def __init__(s,*a,**k): pass
